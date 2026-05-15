@@ -1,0 +1,104 @@
+wandb_name: apertus_8b_no_reasoning_v3_synthetic_v3_guideline_v3_moove_v2
+output_dir: /capstor/scratch/cscs/theimer/meditron/xav/apertus_8b_no_reasoning_v3_synthetic_v3_guideline_v3_moove_v2
+dataset_prepared_path: /capstor/scratch/cscs/theimer/prepared/apertus_8b_no_reasoning_v3_synthetic_v3_guideline_v3_moove_v2
+
+base_model: $STORAGE_ROOT/apertus/huggingface/swiss-ai/Apertus-8B-Instruct-2509
+
+
+# plugins:
+#   - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+
+load_in_8bit: false
+load_in_4bit: false
+
+datasets:
+  - path: /users/theimer/meditron-4/data/curated_qa/curated_qa.jsonl
+    ds_type: json
+    type: chat_template
+    field_messages: conversations
+    message_property_mappings:
+      role: from
+      content: value
+    roles:
+      system: [system]
+      user: [user, human]
+      assistant: [assistant, gpt]
+
+  - path: /users/theimer/meditron-4/data/synthetic_qa/synthetic_curated_qa.jsonl
+    ds_type: json
+    type: chat_template
+    field_messages: conversations
+    message_property_mappings:
+      role: from
+      content: value
+    roles:
+      system: [system]
+      user: [user, human]
+      assistant: [assistant, gpt]
+
+  - path: /users/theimer/meditron-4/data/guidelines_qa/guidelines_qa.jsonl
+    ds_type: json
+    type: chat_template
+    field_messages: conversations
+    message_property_mappings:
+      role: from
+      content: value
+    roles:
+      system: [system]
+      user: [user, human]
+      assistant: [assistant, gpt]
+
+  - path:  /users/theimer/meditron-4/data/synthetic_moove/synthetic_moove.jsonl
+    ds_type: json
+    type: chat_template
+    field_messages: conversations
+    message_property_mappings:
+      role: from
+      content: value
+    roles:
+      system: [system]
+      user: [user, human]
+      assistant: [assistant, gpt]
+
+      
+val_set_size: 0.0
+
+
+sequence_len: 4096
+sample_packing: true
+
+
+gradient_accumulation_steps: 1
+micro_batch_size: 8
+num_epochs: 1
+optimizer: adamw_torch_fused
+lr_scheduler: cosine
+learning_rate: 2e-5
+max_grad_norm: 1.0
+weight_decay: 0.1
+adam_beta2: 0.99
+
+bf16: true
+tf32: true
+
+logging_steps: 1
+flash_attention: true
+
+warmup_ratio: 0.1
+evals_per_epoch: 0
+saves_per_epoch: 0
+wandb_project: $WANDB_PROJECT
+wandb_entity: $WANDB_ENTITY
+
+fsdp_version: 2
+fsdp_config:
+  offload_params: false
+  cpu_ram_efficient_loading: true
+  auto_wrap_policy: TRANSFORMER_BASED_WRAP
+  transformer_layer_cls_to_wrap: ApertusDecoderLayer
+  state_dict_type: SHARDED_STATE_DICT
+  reshard_after_forward: true
+  activation_checkpointing: true
+
+seed: 42
+data_seed: 42

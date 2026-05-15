@@ -1,0 +1,20 @@
+# Data paths for the source-vs-synthetic distribution-shift analysis pipeline.
+#
+# All paths are interpreted relative to the --root argument (typically the
+# parent repo's root). Override individual paths via CLI flags
+# (--moove-source, --moove-synthetic, --meditron-source, --meditron-synthetic,
+#  --guidelines-dir, --guidelines-synthetic) or by pointing --config at a
+# different YAML file.
+#
+# Naming note: the legacy CLI flags use --meditron-* but the canonical key
+# names below use --curated-* (matching the paper's "Curated QA" terminology).
+
+# ─── Source corpora ───────────────────────────────────────────────────────
+moove_source:    data/moove/full_moove.jsonl
+curated_source:  data/curated_qa/meditron_4_cleaned.jsonl
+guidelines_dir:  data/guidelines
+
+# ─── Synthetic counterparts ───────────────────────────────────────────────
+moove_synthetic:      data/synthetic_moove/synthetic_moove_v2_gpt_oss_1try.jsonl
+curated_synthetic:    data/synthetic_qa/meditron_4_synthetic_qa_v3.jsonl
+guidelines_synthetic: data/guidelines_qa/guidelines_qa_v3_full.jsonl

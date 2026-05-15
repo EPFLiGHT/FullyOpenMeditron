@@ -1,0 +1,66 @@
+{
+  "builder_name": "json",
+  "citation": "",
+  "config_name": "default",
+  "dataset_name": "json",
+  "dataset_size": 167208756,
+  "description": "",
+  "download_checksums": {
+    "/users/theimer/meditron-4/data/synthetic_moove/synthetic_moove_v2_distillation_1try.jsonl": {
+      "num_bytes": 170509123,
+      "checksum": null
+    }
+  },
+  "download_size": 170509123,
+  "features": {
+    "conversations": {
+      "feature": {
+        "from": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "value": {
+          "dtype": "string",
+          "_type": "Value"
+        }
+      },
+      "_type": "List"
+    },
+    "exact_match": {
+      "dtype": "null",
+      "_type": "Value"
+    },
+    "try_count": {
+      "dtype": "int64",
+      "_type": "Value"
+    },
+    "conversation_id": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "prompt_token_ids": {
+      "feature": {
+        "dtype": "int64",
+        "_type": "Value"
+      },
+      "_type": "List"
+    }
+  },
+  "homepage": "",
+  "license": "",
+  "size_in_bytes": 337717879,
+  "splits": {
+    "train": {
+      "name": "train",
+      "num_bytes": 167208756,
+      "num_examples": 24465,
+      "dataset_name": "json"
+    }
+  },
+  "version": {
+    "version_str": "0.0.0",
+    "major": 0,
+    "minor": 0,
+    "patch": 0
+  }
+}

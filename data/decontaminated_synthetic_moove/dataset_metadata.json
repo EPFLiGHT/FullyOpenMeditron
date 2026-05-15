@@ -1,0 +1,21 @@
+{
+  "processing_log": [
+    {
+      "operation": "decontamination",
+      "script": "decontamination.py",
+      "timestamp": "2026-04-20T18:03:02.147376",
+      "input_path": "data/synthetic_moove/synthetic_moove_v2_distillation_1try.jsonl",
+      "output_path": "data/decontaminated_synthetic_moove",
+      "tokenizer_name": "alehc/swissai-tokenizer",
+      "ngram_length": 8,
+      "diff_threshold": 0.5,
+      "benchmarks_processed": 1,
+      "benchmark_names": [
+        "custom_eval_benchmark"
+      ],
+      "contaminated_samples_removed": 78,
+      "samples_after_filtering": 24387,
+      "decontamination_success": true
+    }
+  ]
+}
