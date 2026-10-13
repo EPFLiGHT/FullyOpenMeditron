@@ -1,0 +1,32 @@
+# Local / non-cluster environment: viewing Inspect logs, analysis, plotting.
+#
+# This is NOT the cluster job environment. Compute-node jobs run inside the
+# container EDF and install requirements-inference.txt (or nothing, with
+# `new_launch.sh --requirements none`). Nothing here pulls torch or vLLM, so it
+# installs in seconds on a laptop.
+#
+# Install with:  bash setup_local_env.sh
+
+# Inspect log viewer -- `inspect view --log-dir ...`
+inspect-ai>=0.3.246
+
+# Core analysis: auto_moove/{auto_moove,moove_stats,auto_moove_leaderboard}.py
+numpy
+pandas
+scipy                    # BCa bootstrap in moove_stats.compute_ci
+statsmodels              # regressions in auto_moove_forest*.py, auto_moove_vote_rules.py
+scikit-learn             # auto_moove_forest_chosen*.py
+
+# Plotting: forest plots, radar charts, moove/ analysis
+matplotlib
+
+# Inter-rater agreement: moove/moove_agreement_stats.py, moove_kappa.py
+krippendorff
+
+# Schema models shared with the pipeline (auto_moove_prompt.py)
+pydantic
+openai                   # API judges from the login node (auto_moove_check --batch)
+google-genai             # Gemini judge for the corpus audit (corpus_audit/judge_moove.py)
+
+# PDF page counts and figure cropping: tech_reports/figures/iclr_clean_figures.py, papers/*/build.sh
+pymupdf

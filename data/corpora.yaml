@@ -1,0 +1,76 @@
+# Training corpora of the paper, with row counts and sha256 (python3 resampling/corpora.py check).
+corpora:
+  meditronfo_gptoss_v1:
+    answer_model: openai/gpt-oss-120b
+    created: '2026-09-21'
+    notes:
+    - 'answers by gpt-oss-120b (reasoning low, final channel kept): resampling/resample_answers.py, pass@k waves
+      1,3,4 (pass@8), no truncated answer kept'
+    - multiple-choice rows verified against their label; rows with no sample reaching it are dropped
+    - 'synthetic_qa: multiple-choice rows with no options in the question dropped; guidelines_qa: unusable question
+      stubs dropped'
+    - 'synthetic_moove (v4): seeded from data/moove/full_moove_eval_free.jsonl (every evaluation question removed);
+      decontaminated against the evaluation set and the unanimous-576 set'
+    - the two corpora have the same questions
+    files:
+      curated_qa:
+        path: data/corpora/meditronfo_gptoss_v1/curated_qa.jsonl
+        rows: 195538
+        bytes: 464792685
+        sha256: 04d4acbbd3b31bad76d165328b3aa2792166cf31b1352f7c57ad491dcee14fb7
+        source: data/corpora/meditronfo_gptoss_v1/curated_qa.jsonl
+      synthetic_qa:
+        path: data/corpora/meditronfo_gptoss_v1/synthetic_qa.jsonl
+        rows: 184540
+        bytes: 736096959
+        sha256: e2284b50a52da3ce6a2518bf2b014cb153763e07ddef31da90ca91b9ee370952
+        source: data/corpora/meditronfo_gptoss_v1/synthetic_qa.jsonl
+      guidelines_qa:
+        path: data/corpora/meditronfo_gptoss_v1/guidelines_qa.jsonl
+        rows: 129767
+        bytes: 306498120
+        sha256: 64a99f050b4db6f1ebb0aec5e0fb25a0fd1bd1f5e44d6b0d633c44702bb606f2
+        source: data/corpora/meditronfo_gptoss_v1/guidelines_qa.jsonl
+      synthetic_moove:
+        path: data/corpora/meditronfo_gptoss_v1/synthetic_moove.jsonl
+        rows: 24043
+        bytes: 243182960
+        sha256: 5fc36eb2b295ae4e0dc636990fed54e7d29e90cb62eb5873658b6e877e5a8a7a
+        source: data/corpora/meditronfo_gptoss_v1/synthetic_moove.jsonl
+  meditronfo_qwen38_v3:
+    answer_model: Qwen/Qwen3.8-27B
+    created: '2026-09-21'
+    notes:
+    - 'answers by Qwen3.8-27B (thinking off): resampling/resample_answers.py, pass@k waves 1,3,4 (pass@8), no truncated
+      answer kept'
+    - multiple-choice rows verified against their label; rows with no sample reaching it are dropped
+    - 'synthetic_qa: multiple-choice rows with no options in the question dropped; guidelines_qa: unusable question
+      stubs dropped'
+    - 'synthetic_moove (v4): seeded from data/moove/full_moove_eval_free.jsonl (every evaluation question removed);
+      decontaminated against the evaluation set and the unanimous-576 set'
+    - the two corpora have the same questions
+    files:
+      curated_qa:
+        path: data/corpora/meditronfo_qwen38_v3/curated_qa.jsonl
+        rows: 201018
+        bytes: 924406573
+        sha256: d79092e8390a5734afb80d4db6f33b42053911d7153dbfc72a5de6c37468743d
+        source: data/corpora/meditronfo_qwen38_v3/curated_qa.jsonl
+      synthetic_qa:
+        path: data/corpora/meditronfo_qwen38_v3/synthetic_qa.jsonl
+        rows: 185396
+        bytes: 1122808109
+        sha256: f27b2541e1623dbb748da31a97d3ca7ec06d21ec0c4f3bfd021e82660311fe59
+        source: data/corpora/meditronfo_qwen38_v3/synthetic_qa.jsonl
+      guidelines_qa:
+        path: data/corpora/meditronfo_qwen38_v3/guidelines_qa.jsonl
+        rows: 132678
+        bytes: 689981142
+        sha256: cdf806dd953eec982d0955fcbf31235cb7448995818345e8cee7af3599982067
+        source: data/corpora/meditronfo_qwen38_v3/guidelines_qa.jsonl
+      synthetic_moove:
+        path: data/corpora/meditronfo_qwen38_v3/synthetic_moove.jsonl
+        rows: 24043
+        bytes: 210426981
+        sha256: ae537f785a6abdd45170b6c93d25897af5081683d880b1992ad729eba072dae4
+        source: data/corpora/meditronfo_qwen38_v3/synthetic_moove.jsonl

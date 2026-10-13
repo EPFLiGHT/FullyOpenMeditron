@@ -1,0 +1,22 @@
+\begin{tabular}{lcccccc}
+\toprule
+& \multicolumn{3}{c}{\textbf{Full}} & \multicolumn{3}{c}{\textbf{Hard}} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}
+\textbf{Model} & Chars & Score & Adjusted & Chars & Score & Adjusted \\
+\midrule
+Apertus-70B-Instruct & 3250 & 39.4 & 35.7 & 3371 & 12.1 & 8.1 \\
+\quad + MeditronFO & 5061 {\scriptsize $\mathbf{+1810}$} & 49.3 {\scriptsize $\mathbf{+10.0}$} & 40.3 {\scriptsize $\mathbf{+4.6}$} & 4725 {\scriptsize $\mathbf{+1355}$} & 22.1 {\scriptsize $\mathbf{+10.0}$} & 14.1 {\scriptsize $\mathbf{+6.0}$} \\
+Apertus-8B-Instruct & 1644 & 26.0 & 27.0 & 1630 & 0.0 & 0.0 \\
+\quad + MeditronFO & 5023 {\scriptsize $\mathbf{+3380}$} & 42.1 {\scriptsize $\mathbf{+16.1}$} & 33.2 {\scriptsize $\mathbf{+6.1}$} & 4764 {\scriptsize $\mathbf{+3134}$} & 15.7 {\scriptsize $\mathbf{+15.7}$} & 7.6 {\scriptsize $\mathbf{+7.6}$} \\
+OLMo-2-32B-SFT & 1410 & 26.6 & 28.3 & 1357 & 0.0 & 0.6 \\
+\quad + MeditronFO & 3440 {\scriptsize $\mathbf{+2030}$} & 41.6 {\scriptsize $\mathbf{+15.0}$} & 37.4 {\scriptsize $\mathbf{+9.1}$} & 3190 {\scriptsize $\mathbf{+1832}$} & 11.8 {\scriptsize $\mathbf{+11.8}$} & 8.3 {\scriptsize $\mathbf{+7.7}$} \\
+EuroLLM-22B-Instruct & 2233 & 39.9 & 39.3 & 2165 & 9.1 & 8.6 \\
+\quad + MeditronFO & 4534 {\scriptsize $\mathbf{+2301}$} & 43.5 {\scriptsize $\mathbf{+3.5}$} & 36.0 {\scriptsize $\mathbf{-3.3}$} & 4300 {\scriptsize $\mathbf{+2135}$} & 15.1 {\scriptsize $\mathbf{+6.0}$} & 8.3 {\scriptsize $-0.3$} \\
+EuroLLM-9B-Instruct & 1142 & 18.7 & 21.2 & 1047 & 0.0 & 0.0 \\
+\quad + MeditronFO & 3651 {\scriptsize $\mathbf{+2509}$} & 34.0 {\scriptsize $\mathbf{+15.3}$} & 29.1 {\scriptsize $\mathbf{+8.0}$} & 3409 {\scriptsize $\mathbf{+2363}$} & 6.9 {\scriptsize $\mathbf{+6.9}$} & 2.8 {\scriptsize $\mathbf{+2.8}$} \\
+Gemma-3-27B-IT & 4749 & 55.4 & 47.3 & 4531 & 29.1 & 21.7 \\
+\quad + MeditronFO & 5509 {\scriptsize $\mathbf{+760}$} & 56.2 {\scriptsize $\mathbf{+0.8}$} & 45.9 {\scriptsize $\mathbf{-1.4}$} & 5240 {\scriptsize $\mathbf{+708}$} & 29.5 {\scriptsize $+0.4$} & 20.0 {\scriptsize $\mathbf{-1.7}$} \\
+\midrule
+MedGemma-27B {\scriptsize (vs Gemma-3)} & 4274 {\scriptsize $\mathbf{-475}$} & 54.8 {\scriptsize $-0.6$} & 48.1 {\scriptsize $\mathbf{+0.8}$} & 4021 {\scriptsize $\mathbf{-511}$} & 25.4 {\scriptsize $\mathbf{-3.7}$} & 19.4 {\scriptsize $\mathbf{-2.2}$} \\
+\bottomrule
+\end{tabular}

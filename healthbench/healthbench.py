@@ -16,7 +16,9 @@ You can also evaluate physician ideal completions or reference completions again
 import argparse
 import gc
 import hashlib
+import html as html_lib
 import json
+import os
 import random
 import re
 from collections import defaultdict
@@ -51,6 +53,17 @@ class EvalResult:
 INPUT_PATH = "https://openaipublic.blob.core.windows.net/simple-evals/healthbench/2025-05-07-06-14-12_oss_eval.jsonl"
 INPUT_PATH_HARD = "https://openaipublic.blob.core.windows.net/simple-evals/healthbench/hard_2025-05-08-21-00-10.jsonl"
 INPUT_PATH_CONSENSUS = "https://openaipublic.blob.core.windows.net/simple-evals/healthbench/consensus_2025-05-09-20-00-46.jsonl"
+# HealthBench Professional ships only as a zip, so there is no jsonl URL to
+# fetch. Unzip healthbench_professional_eval.jsonl from
+# https://openaipublic.blob.core.windows.net/simple-evals/healthbench_professional/assets.zip
+# on the login node to this path (relative to the repo root).
+INPUT_PATH_PROFESSIONAL = "data/healthbench/professional.jsonl"
+
+# HealthBench Professional length adjustment (paper, Sec. scoring): a response
+# of 2,000 final-answer characters is unadjusted, and every 500 characters
+# above (below) that costs (earns) 2.94e-5 * 500 = 0.0147 on the 0-1 scale.
+PROFESSIONAL_LENGTH_CENTER = 2000.0
+PROFESSIONAL_LENGTH_PENALTY_PER_500_CHARS = 0.0147
 
 GRADER_TEMPLATE = """
 Your job is to look at a conversation and a rubric item, and score the last turn (i.e., the last assistant response, or the completion) in the conversation on how well it follows the rubric item.
@@ -138,6 +151,30 @@ class RubricItem:
             points=d["points"],
             tags=d["tags"],
         )
+
+
+def normalize_professional_example(example: dict) -> dict:
+    """Convert a HealthBench Professional row to the original HealthBench format.
+
+    Professional rows hold `conversation.messages`, `rubric_items` with
+    `criterion_text` and no tags, and `use_case`/`type`/`difficulty`/`specialty`
+    in place of `example_tags`. Those four become example tags, so the per-slice
+    scores are reported the same way as the original's themes.
+    """
+    if "rubric_items" not in example:
+        return example
+    return {
+        "prompt": example["conversation"]["messages"],
+        "rubrics": [
+            {"criterion": r["criterion_text"], "points": r["points"], "tags": []}
+            for r in example["rubric_items"]
+        ],
+        "example_tags": [
+            f"{key}:{example[key]}"
+            for key in ("use_case", "type", "difficulty", "specialty")
+        ],
+        "prompt_id": example["id"],
+    }
 
 
 def calculate_score(
@@ -279,10 +316,88 @@ def _aggregate_get_clipped_mean(
 
 
 
+# The per-example and whole-run HTML of simple-evals (common.HTML_JINJA with
+# the correct-answer line dropped, and common._report_template), rendered with
+# html.escape instead of jinja2 so the container needs nothing extra.
+_REPORT_STYLE = """
+.message { padding: 8px 16px; margin-bottom: 8px; border-radius: 4px; }
+.message.user { background-color: #B2DFDB; color: #00695C; }
+.message.assistant { background-color: #B39DDB; color: #4527A0; }
+.message.system { background-color: #EEEEEE; color: #212121; }
+.role { font-weight: bold; margin-bottom: 4px; }
+table, th, td { border: 1px solid black; }
+pre { white-space: pre-wrap; }
+"""
+
+
+def write_atomic(path: Path, text: str) -> None:
+    """Write via a temp file and rename it into place. On 2026-09-21 a plain
+    write_text over the file a preempted attempt had written left that
+    attempt's tail after the new JSON on Lustre, so the result did not parse."""
+    tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    tmp.write_text(text, encoding="utf-8")
+    os.replace(tmp, path)
+
+
+def message_to_html(message: dict) -> str:
+    role = html_lib.escape(message["role"])
+    return (
+        f'<div class="message {role}"><div class="role">{role}</div>'
+        f'<div class="content"><pre>{html_lib.escape(message["content"])}</pre></div></div>'
+    )
+
+
+def example_to_html(prompt: list[dict], completion: str, score: float, rubric_grades: str) -> str:
+    return (
+        "<h3>Prompt conversation</h3>\n"
+        + "\n".join(message_to_html(m) for m in prompt)
+        + "\n<h3>Sampled message</h3>\n"
+        + message_to_html({"role": "assistant", "content": completion})
+        + "\n<h3>Results</h3>\n"
+        + f"<p>Extracted Answer: {html_lib.escape(completion)}</p>\n"
+        + f"<p>Score: {score}</p>\n"
+        + f"<p>Rubrics with grades: {html_lib.escape(rubric_grades).replace(chr(10), '<br>')}</p>"
+    )
+
+
+def make_report(result: "EvalResult") -> str:
+    rows = "\n".join(
+        f"<tr><td>{html_lib.escape(name)}</td><td>{value}</td></tr>"
+        for name, value in result.metrics.items()
+    )
+    examples = "\n<hr>\n".join(result.htmls)
+    return (
+        f"<!DOCTYPE html>\n<html><head><meta charset=\"utf-8\"><style>{_REPORT_STYLE}</style></head><body>\n"
+        f"<h1>Metrics</h1>\n<table><tr><th>Metric</th><th>Value</th></tr>\n"
+        f"<tr><td><b>Score</b></td><td>{round(float(result.score), 3)}</td></tr>\n{rows}\n</table>\n"
+        f"<h1>Examples</h1>\n{examples}\n<hr>\n</body></html>\n"
+    )
+
+
 def free_vram():
     destroy_model_parallel()
     gc.collect()
     torch.cuda.empty_cache()
+
+
+HARMONY_FINAL = "<|channel|>final<|message|>"
+
+
+def strip_reasoning(text: str, reasoning_format: str) -> str:
+    if reasoning_format == "none":
+        return text.strip()
+    if reasoning_format == "think":
+        if "</think>" not in text:
+            return ""
+        return text.rsplit("</think>", 1)[1].strip()
+    if reasoning_format == "harmony":
+        if HARMONY_FINAL not in text:
+            return ""
+        final = text.rsplit(HARMONY_FINAL, 1)[1]
+        for end in ("<|return|>", "<|end|>"):
+            final = final.split(end, 1)[0]
+        return final.strip()
+    raise ValueError(f"unknown reasoning_format {reasoning_format!r}")
 
 
 def vllm_batch_generate(
@@ -292,8 +407,17 @@ def vllm_batch_generate(
     temperature: float,
     tensor_parallel_size: int = 0,
     gpu_memory_utilization: float = 0.90,
+    llm_kwargs: dict | None = None,
+    chat_template_kwargs: dict | None = None,
+    reasoning_format: str = "none",
 ) -> list[str]:
-    """Load model, batch-generate, free VRAM. Returns list of response texts."""
+    """Load model, batch-generate, free VRAM. Returns list of response texts.
+
+    reasoning_format drops the reasoning so only the final answer is graded:
+    "think" keeps the text after the last </think> (Qwen3-style), "harmony"
+    keeps the final channel (gpt-oss). A response whose reasoning never ended
+    (hit max_tokens) becomes "" and scores as an empty answer.
+    """
     tp = tensor_parallel_size if tensor_parallel_size > 0 else torch.cuda.device_count()
     
     print(f"\n>>> Loading {model_name} (tp={tp}) <<<")
@@ -302,27 +426,73 @@ def vllm_batch_generate(
         tensor_parallel_size=tp,
         gpu_memory_utilization=gpu_memory_utilization,
         trust_remote_code=True,
+        **(llm_kwargs or {}),
     )
     tokenizer = llm.get_tokenizer()
     
     sampling_params = SamplingParams(
         temperature=temperature,
         max_tokens=max_tokens,
+        seed=0,
+        # Harmony channel markers are special tokens; keep them to split on.
+        skip_special_tokens=(reasoning_format != "harmony"),
     )
     
     # Format prompts via chat template
-    formatted = []
+    def render(messages):
+        return tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True,
+                                             **(chat_template_kwargs or {}))
+
+    # A conversation longer than the model's context used to kill the whole
+    # run: vLLM raises on the first prompt over max_model_len, so one example
+    # cost every other one too. That is how the HealthBench "professional"
+    # subset failed on 2026-09-22 for the two 8192-token bases, OLMo-2-32B
+    # (1 of 525 conversations) and EuroLLM-9B (3 of 525); the 32k and 131k
+    # models never reach this path. The oldest exchanges are dropped until
+    # the prompt leaves room for max_tokens of answer, which keeps every
+    # model scored on all 525 examples rather than on a different subset
+    # each. A conversation opens with a user turn and alternates, so turns
+    # are dropped in pairs to keep it that way.
+    budget = getattr(getattr(llm, "llm_engine", None), "model_config", None)
+    budget = getattr(budget, "max_model_len", None)
+    budget = budget - max_tokens if budget else None
+
+    def n_tokens(text):
+        return len(tokenizer(text, add_special_tokens=False)["input_ids"])
+
+    def fit(messages):
+        """Drop leading exchanges until the rendered prompt fits the budget."""
+        msgs = list(messages)
+        while len(msgs) > 1 and n_tokens(render(msgs)) > budget:
+            del msgs[:2]
+        # One turn can be longer than the whole budget on its own: one
+        # professional conversation is, for the 4096-token EuroLLM-9B-Instruct
+        # (2026-09-23). Keep the end of that turn, where the question is.
+        over = n_tokens(render(msgs)) - budget
+        if over > 0:
+            ids = tokenizer(msgs[-1]["content"], add_special_tokens=False)["input_ids"]
+            msgs[-1] = {**msgs[-1], "content": tokenizer.decode(ids[over + 16:])}
+        return msgs
+
+    formatted, truncated = [], 0
     for p in prompts:
-        if isinstance(p, list):
-            text = tokenizer.apply_chat_template(p, tokenize=False, add_generation_prompt=True)
-        else:
-            messages = [{"role": "user", "content": p}]
-            text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+        messages = p if isinstance(p, list) else [{"role": "user", "content": p}]
+        text = render(messages)
+        if budget and budget > 0 and n_tokens(text) > budget:
+            kept = fit(messages)
+            truncated += 1
+            text = render(kept)
         formatted.append(text)
+    if truncated:
+        print(f">>> Dropped the oldest turns of {truncated}/{len(formatted)} prompts "
+              f"to fit {budget} tokens of context <<<")
     
     print(f">>> Generating {len(formatted)} completions <<<")
     outputs = llm.generate(prompts=formatted, sampling_params=sampling_params)
-    results = [out.outputs[0].text.strip() for out in outputs]
+    results = [strip_reasoning(out.outputs[0].text, reasoning_format) for out in outputs]
+    if reasoning_format != "none":
+        unfinished = sum(1 for r in results if not r)
+        print(f">>> Responses with no final answer after reasoning (scored empty): {unfinished}/{len(results)} <<<")
     
     del llm
     free_vram()
@@ -335,8 +505,10 @@ class HealthBenchVLLMEval:
         grader_name: str,
         num_examples: int | None = None,
         n_repeats: int = 1,
-        subset_name: Literal["hard", "consensus"] | None = None,
+        subset_name: Literal["hard", "consensus", "professional"] | None = None,
         input_path: str | None = None,
+        length_adjustment_center: float | None = None,
+        length_adjustment_penalty_per_500_chars: float | None = None,
         max_tokens: int = 2048,
         temperature: float = 0.7,
         grader_max_tokens: int = 2048,
@@ -344,6 +516,15 @@ class HealthBenchVLLMEval:
         grader_max_retries: int = 3,
         tensor_parallel_size: int = 0,
         gpu_memory_utilization: float = 0.90,
+        grader_max_model_len: int | None = None,
+        grader_hf_overrides: dict | None = None,
+        grader_attention_backend: str | None = None,
+        model_llm_kwargs: dict | None = None,
+        chat_template_kwargs: dict | None = None,
+        reasoning_format: str = "none",
+        completions_from: str | None = None,
+        completions_out: str | None = None,
+        grader_llm_kwargs: dict | None = None,
     ):
         self.model_name = model_name
         self.grader_name = grader_name
@@ -354,13 +535,37 @@ class HealthBenchVLLMEval:
         self.grader_max_retries = grader_max_retries
         self.tp = tensor_parallel_size
         self.util = gpu_memory_utilization
-        
+        self.grader_max_model_len = grader_max_model_len
+        self.grader_hf_overrides = grader_hf_overrides
+        self.grader_attention_backend = grader_attention_backend
+        self.model_llm_kwargs = model_llm_kwargs
+        self.chat_template_kwargs = chat_template_kwargs
+        self.reasoning_format = reasoning_format
+        self.completions_from = completions_from
+        self.completions_out = completions_out
+        self.grader_llm_kwargs = grader_llm_kwargs
+
+        # Same contract as simple-evals: both length-adjustment values or neither.
+        if (length_adjustment_center is None) != (length_adjustment_penalty_per_500_chars is None):
+            raise ValueError(
+                "length_adjustment_center and "
+                "length_adjustment_penalty_per_500_chars must be set together"
+            )
+        if length_adjustment_center is not None and (
+            length_adjustment_center < 0 or length_adjustment_penalty_per_500_chars < 0
+        ):
+            raise ValueError("length adjustment values must be non-negative")
+        self.length_adjustment_center = length_adjustment_center
+        self.length_adjustment_penalty_per_500_chars = length_adjustment_penalty_per_500_chars
+
         # Resolve input path
         if input_path is None:
             if subset_name == "hard":
                 input_path = INPUT_PATH_HARD
             elif subset_name == "consensus":
                 input_path = INPUT_PATH_CONSENSUS
+            elif subset_name == "professional":
+                input_path = INPUT_PATH_PROFESSIONAL
             else:
                 input_path = INPUT_PATH
         
@@ -371,6 +576,7 @@ class HealthBenchVLLMEval:
         else:
             with open(input_path, "r", encoding="utf-8") as f:
                 examples = [json.loads(line) for line in f if line.strip()]
+        examples = [normalize_professional_example(e) for e in examples]
         for example in examples:
             example["rubrics"] = [RubricItem.from_dict(d) for d in example["rubrics"]]
         
@@ -380,17 +586,56 @@ class HealthBenchVLLMEval:
         
         self.examples = examples * n_repeats
     
+    def load_completions(self, path: str) -> list[str]:
+        """The completions of an earlier run's results JSON, in self.examples order.
+
+        Re-grading the same answers is what makes two graders comparable: a
+        fresh generation at temperature 0.7 would add sampling noise to the
+        grader difference.
+        """
+        if len(self.examples) != len({row["prompt_id"] for row in self.examples}):
+            raise ValueError("--completions-from needs --n-repeats 1")
+        saved = json.loads(Path(path).read_text())["metadata"]["example_level_metadata"]
+        by_id = {e["prompt_id"]: e["completion"][-1]["content"] for e in saved}
+        missing = [row["prompt_id"] for row in self.examples if row["prompt_id"] not in by_id]
+        if missing:
+            raise ValueError(f"{path} has no completion for {len(missing)} prompts, e.g. {missing[0]}")
+        print(f"\n>>> Re-grading {len(self.examples)} completions from {path} <<<")
+        return [by_id[row["prompt_id"]] for row in self.examples]
+
+    def save_completions(self, completions: list[str]) -> None:
+        """Write completions before grading, in the layout load_completions reads.
+
+        A grader that fails to load otherwise throws away the whole generation;
+        rerun with --completions-from <this file> to grade it.
+        """
+        out = Path(self.completions_out)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        write_atomic(out, json.dumps({"metadata": {"example_level_metadata": [
+            {"prompt_id": row["prompt_id"], "completion": [{"role": "assistant", "content": c}]}
+            for row, c in zip(self.examples, completions)
+        ]}}, indent=2))
+        print(f">>> Saved {len(completions)} completions to {out} <<<")
+
     def run(self) -> EvalResult:
         # === PHASE 1: Generate model-under-test completions ===
         prompts = [row["prompt"] for row in self.examples]
-        completions = vllm_batch_generate(
-            self.model_name,
-            prompts,
-            max_tokens=self.max_tokens,
-            temperature=self.temperature,
-            tensor_parallel_size=self.tp,
-            gpu_memory_utilization=self.util,
-        )
+        if self.completions_from is not None:
+            completions = self.load_completions(self.completions_from)
+        else:
+            completions = vllm_batch_generate(
+                self.model_name,
+                prompts,
+                max_tokens=self.max_tokens,
+                temperature=self.temperature,
+                tensor_parallel_size=self.tp,
+                gpu_memory_utilization=self.util,
+                llm_kwargs=self.model_llm_kwargs,
+                chat_template_kwargs=self.chat_template_kwargs,
+                reasoning_format=self.reasoning_format,
+            )
+            if self.completions_out is not None:
+                self.save_completions(completions)
         
         # Build the (example_idx, rubric_idx, grader_prompt) flat list
         grader_prompts = []
@@ -425,6 +670,14 @@ class HealthBenchVLLMEval:
             tensor_parallel_size=tp,
             gpu_memory_utilization=self.util,
             trust_remote_code=True,
+            # None keeps the model's own limit. Long-context graders (Gemma-4)
+            # need a cap so the KV cache fits.
+            max_model_len=self.grader_max_model_len,
+            hf_overrides=self.grader_hf_overrides,
+            # Only when set: older vLLM images have no attention_backend kwarg.
+            **({"attention_backend": self.grader_attention_backend}
+               if self.grader_attention_backend else {}),
+            **(self.grader_llm_kwargs or {}),
         )
         grader_tok = grader_llm.get_tokenizer()
         
@@ -456,7 +709,10 @@ class HealthBenchVLLMEval:
                     new_pending.append(i)
             pending = new_pending
         
-        # Anything still unparsed: fill with criteria_met=False so scoring proceeds
+        # Anything still unparsed: fill with criteria_met=False so scoring proceeds.
+        # simple-evals retries without limit instead, so a large count here
+        # means the score is not comparable.
+        print(f">>> Rubric grades unparsed after retries (counted as not met): {len(pending)}/{len(grader_prompts)} <<<")
         for i in pending:
             parsed_results[i] = {"criteria_met": False, "explanation": "Failed to parse after retries"}
         
@@ -479,7 +735,15 @@ class HealthBenchVLLMEval:
             overall_score = calculate_score(rubric_items, grading_response_list)
             assert overall_score is not None
             metrics = {"overall_score": overall_score}
-            
+            if self.length_adjustment_center is not None:
+                # Per-example, before the clipped mean, as in simple-evals.
+                metrics["overall_score_length_adjusted"] = calculate_length_adjusted_score(
+                    overall_score,
+                    completions[ex_idx],
+                    center=self.length_adjustment_center,
+                    penalty_per_500_chars=self.length_adjustment_penalty_per_500_chars,
+                )
+
             # example-level tags
             for tag in row["example_tags"]:
                 metrics[tag] = overall_score
@@ -507,7 +771,7 @@ class HealthBenchVLLMEval:
             readable_str = "\n\n" + "\n\n".join(readable)
             
             convo = row["prompt"] + [{"role": "assistant", "content": completions[ex_idx]}]
-            html = ""
+            html = example_to_html(row["prompt"], completions[ex_idx], overall_score, readable_str)
             
             single_results.append(SingleEvalResult(
                 html=html,
@@ -534,20 +798,64 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", required=True, help="HF path/name for model under test")
     parser.add_argument("--grader", required=True, help="HF path/name for grader")
-    parser.add_argument("--subset", choices=["hard", "consensus"], default=None)
+    parser.add_argument("--subset", choices=["hard", "consensus", "professional"], default=None)
+    # The default loader fetches the dataset over HTTPS, which compute nodes
+    # cannot do. Point this at a copy downloaded on the login node instead.
+    parser.add_argument("--input-path", default=None,
+                        help="local HealthBench jsonl; overrides --subset's URL")
+    # HealthBench Professional scores length-adjusted. --subset professional
+    # uses the paper's values unless these are given; they also apply to the
+    # other subsets when set, as in simple-evals.
+    parser.add_argument("--length-adjustment-center", type=float, default=None,
+                        help="final-answer characters that get no length adjustment")
+    parser.add_argument("--length-adjustment-penalty-per-500-chars", type=float, default=None,
+                        help="score (0-1) removed per 500 characters above the center")
     parser.add_argument("--examples", type=int, default=None)
     parser.add_argument("--n-repeats", type=int, default=1)
-    parser.add_argument("--max-tokens", type=int, default=2048)
+    parser.add_argument("--max-tokens", type=int, default=2048,
+                        help="includes reasoning tokens; raise it for reasoning models")
+    parser.add_argument("--model-llm-kwargs", type=json.loads, default=None,
+                        help="JSON dict of extra vLLM LLM() kwargs for the model under test, "
+                             "e.g. hf_overrides, attention_backend, compilation_config")
+    parser.add_argument("--chat-template-kwargs", type=json.loads, default=None,
+                        help="JSON dict for the model's chat template, e.g. "
+                             "'{\"reasoning_effort\": \"medium\"}'")
+    parser.add_argument("--reasoning-format", choices=["none", "think", "harmony"], default="none",
+                        help="strip reasoning before grading: think=</think> (Qwen3), harmony=gpt-oss")
     parser.add_argument("--temperature", type=float, default=0.7)
     parser.add_argument("--grader-max-tokens", type=int, default=2048)
     parser.add_argument("--grader-temperature", type=float, default=0.1)
     parser.add_argument("--grader-max-retries", type=int, default=3)
     parser.add_argument("--tp", type=int, default=0)
     parser.add_argument("--utilization", type=float, default=0.90)
+    parser.add_argument("--grader-max-model-len", type=int, default=None,
+                        help="context cap for the grader; the model's own limit if unset")
+    # vLLM 0.27.1 with transformers 5.17 (vllm-cuda:alps7-dev) cannot read
+    # Gemma-4's per-layer attention config. It needs
+    # '{"text_config": {"allow_global_per_layer_attribute_access": true,
+    #   "global_head_dim": 512, "num_global_key_value_heads": 4}}'
+    # and --grader-attention-backend TRITON_ATTN (FLASH_ATTN takes a kernel
+    # path for head_dim 512 whose `quack` dependency the image lacks).
+    parser.add_argument("--grader-hf-overrides", type=json.loads, default=None,
+                        help="JSON dict passed to the grader LLM as hf_overrides")
+    parser.add_argument("--grader-attention-backend", default=None,
+                        help="vLLM attention backend for the grader, e.g. TRITON_ATTN")
+    parser.add_argument("--grader-llm-kwargs", type=json.loads, default=None,
+                        help="JSON dict of extra vLLM LLM() kwargs for the grader, "
+                             "e.g. compilation_config, disable_custom_all_reduce")
+    parser.add_argument("--completions-from", default=None,
+                        help="results JSON of an earlier run: grade its completions "
+                             "instead of generating (--model then only names the outputs)")
     parser.add_argument("--output", default=None, help="Output JSON path. Defaults to results_<model_name>.json")
-    parser.add_argument("--output-dir", default=".", help="Directory for default output file")
+    parser.add_argument("--output-dir", default="healthbench/results", help="Directory for default output file")
     parser.add_argument("--summary-file", default=None, help="Append a one-line CSV summary here. Defaults to <output-dir>/healthbench_summary.csv")    
     args = parser.parse_args()
+    if (args.length_adjustment_center is None) != (args.length_adjustment_penalty_per_500_chars is None):
+        parser.error("--length-adjustment-center and "
+                     "--length-adjustment-penalty-per-500-chars must be set together")
+    if args.subset == "professional" and args.length_adjustment_center is None:
+        args.length_adjustment_center = PROFESSIONAL_LENGTH_CENTER
+        args.length_adjustment_penalty_per_500_chars = PROFESSIONAL_LENGTH_PENALTY_PER_500_CHARS
 
     if args.output is None:
         model_name = Path(args.model).name  # last path component, works for both HF IDs and local paths
@@ -561,6 +869,9 @@ def main():
         num_examples=args.examples,
         n_repeats=args.n_repeats,
         subset_name=args.subset,
+        input_path=args.input_path,
+        length_adjustment_center=args.length_adjustment_center,
+        length_adjustment_penalty_per_500_chars=args.length_adjustment_penalty_per_500_chars,
         max_tokens=args.max_tokens,
         temperature=args.temperature,
         grader_max_tokens=args.grader_max_tokens,
@@ -568,21 +879,59 @@ def main():
         grader_max_retries=args.grader_max_retries,
         tensor_parallel_size=args.tp,
         gpu_memory_utilization=args.utilization,
+        grader_max_model_len=args.grader_max_model_len,
+        grader_hf_overrides=args.grader_hf_overrides,
+        grader_attention_backend=args.grader_attention_backend,
+        model_llm_kwargs=args.model_llm_kwargs,
+        chat_template_kwargs=args.chat_template_kwargs,
+        reasoning_format=args.reasoning_format,
+        completions_from=args.completions_from,
+        # Next to the results, so a grader crash leaves something to regrade.
+        completions_out=str(Path(args.output).with_suffix(".completions.json")),
+        grader_llm_kwargs=args.grader_llm_kwargs,
     )
     result = eval_obj.run()
-    
-    Path(args.output).write_text(json.dumps({
+
+    # Print the score BEFORE writing anything. An hour of generation and
+    # grading should not be lost to a filesystem problem at the last step --
+    # if the write fails, the number is still in the log.
+    print(f"\n=== FINAL SCORE: {result.score} ===")
+    length_adjusted = result.metrics.get("overall_score_length_adjusted")
+    if length_adjusted is not None:
+        print(f"=== FINAL SCORE (length-adjusted): {length_adjusted} ===")
+
+    # Create the output directory. --output-dir naming a directory that does
+    # not exist yet is the normal case when starting a new grader regime, and
+    # write_text does not create parents: the whole run then dies with
+    # FileNotFoundError after all the work is done.
+    out_path = Path(args.output)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    write_atomic(out_path, json.dumps({
         "score": result.score,
         "metrics": {k: float(v) for k, v in result.metrics.items()},
         "metadata": result.metadata,
     }, indent=2, default=str))
+    # The simple-evals HTML report (metrics table, then every conversation with
+    # its graded rubric), next to the JSON. Written after the JSON so a
+    # rendering problem cannot cost the scores.
+    try:
+        report_path = out_path.with_suffix(".html")
+        write_atomic(report_path, make_report(result))
+        print(f"Report saved to {report_path}")
+    except Exception as e:
+        print(f"HTML report failed, JSON is intact: {e!r}")
     if args.summary_file is None:
         args.summary_file = str(Path(args.output_dir) / "healthbench_summary.csv")
 
     subset_tag = args.subset if args.subset else "none"
     model_name = Path(args.model).name
     summary_line = f"healthbench,{subset_tag},{model_name},{result.score}\n"
+    # HealthBench Professional's headline number is the length-adjusted one;
+    # it gets its own row so the file keeps its four columns.
+    if length_adjusted is not None:
+        summary_line += f"healthbench,{subset_tag}_length_adjusted,{model_name},{length_adjusted}\n"
 
+    Path(args.summary_file).parent.mkdir(parents=True, exist_ok=True)
     with open(args.summary_file, "a", encoding="utf-8") as f:
         f.write(summary_line)
     print(f"Appended summary to {args.summary_file}: {summary_line.strip()}")

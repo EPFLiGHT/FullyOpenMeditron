@@ -1,0 +1,13 @@
+pass@8 over every MCQ row: label never reached in 8 samples  (n/N, %, 95% Wilson CI)
+
+gpt-oss-120b
+  set                             label never reached       all samples on one other letter           needed more than one sample   not voted on
+  Curated QA         16420/194496    8.4% [ 8.3- 8.6]      12879/194496    6.6% [ 6.5- 6.7]      15363/194496    7.9% [ 7.8- 8.0]   {'drop:unusable_question': 1, 'drop:no_options': 11, 'drop:no_question': 202}
+  Synthetic QA       13918/180725    7.7% [ 7.6- 7.8]      11334/180725    6.3% [ 6.2- 6.4]      13195/180725    7.3% [ 7.2- 7.4]   {'drop:no_options': 16131}
+  Guidelines QA      11646/141413    8.2% [ 8.1- 8.4]       8722/141413    6.2% [ 6.0- 6.3]      13012/141413    9.2% [ 9.1- 9.4]   {'drop:unusable_question': 3941, 'drop:no_options': 6}
+
+Qwen3.8-27B
+  set                             label never reached       all samples on one other letter           needed more than one sample   not voted on
+  Curated QA         10940/194496    5.6% [ 5.5- 5.7]       8297/194496    4.3% [ 4.2- 4.4]      14087/194496    7.2% [ 7.1- 7.4]   {'drop:unusable_question': 1, 'drop:no_options': 11, 'drop:no_question': 202}
+  Synthetic QA       13062/180725    7.2% [ 7.1- 7.3]      10881/180725    6.0% [ 5.9- 6.1]      14592/180725    8.1% [ 7.9- 8.2]   {'drop:no_options': 16131}
+  Guidelines QA       8735/141413    6.2% [ 6.1- 6.3]       6150/141413    4.3% [ 4.2- 4.5]      17365/141413   12.3% [12.1-12.5]   {'drop:unusable_question': 3941, 'drop:no_options': 6}

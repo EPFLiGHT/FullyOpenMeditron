@@ -1,0 +1,33 @@
+
+Coverage (graded rows; a judge's failed or unparseable rows are missing)
+------------------------------------------------------------------------
+Gemini 3.6 Flash  audit60_old 60  audit60_v1 35  800_old 800  800_v1 519
+Gemma-4-31B       audit60_old 60  audit60_v1 35  800_old 796  800_v1 519
+
+Against the clinician: the 60 audited items as audited
+------------------------------------------------------
+judge                      catches rejects          passes accepts     kappa_w pooled [95% CI]   bias   kappa_w per criterion (CS, Saf, Fit, Conf, C&C)
+Gemini 3.6 Flash        9/10 = 90% [60-98]     33/50 = 66% [52-78]        +0.61 [+0.51, +0.70]  +0.20   +0.61  +0.56  +0.49  +0.59  +0.69
+Gemma-4-31B             8/10 = 80% [49-94]     39/50 = 78% [65-87]        +0.47 [+0.35, +0.58]  +0.20   +0.45  +0.46  +0.35  +0.47  +0.56
+
+Flag rate, July sample -> v1, paired on the question
+----------------------------------------------------
+judge             subset                          old                v1        paired diff [95% CI]  McNemar p
+Gemini 3.6 Flash  Curated QA                     9.5%              7.1%        +1.8 pp [-3.0, +6.5]      0.607
+Gemini 3.6 Flash  Synthetic QA                  31.5%              8.9%      -12.5 pp [-17.3, -7.7]      0.000
+Gemini 3.6 Flash  Guidelines QA                 16.0%             17.6%        +5.5 pp [+0.5, +9.9]      0.031
+Gemma-4-31B       Curated QA                    10.1%              4.2%        -3.0 pp [-7.1, +0.6]      0.227
+Gemma-4-31B       Synthetic QA                  29.8%              6.0%      -14.4 pp [-19.8, -9.0]      0.000
+Gemma-4-31B       Guidelines QA                 21.6%             11.0%       -5.5 pp [-10.5, +0.0]      0.064
+
+MOOVE-style: what the flags are for
+-----------------------------------
+
+Judge vs judge on the same answers (July 800 + v1)
+--------------------------------------------------
+Gemini 3.6 Flash vs Gemma-4-31B: n=1315; flag agrees 88% (Cohen kappa +0.63); flagged by Gemini 3.6 Flash only 101, by Gemma-4-31B only 53; score kappa_w pooled +0.54
+
+The clinician's ten rejects and fifty accepts: flagged as audited -> in the v1 corpus
+-------------------------------------------------------------------------------------
+Gemini 3.6 Flash  rejects 9 -> 3 of 10   accepts 17 -> 5 of 50
+Gemma-4-31B       rejects 8 -> 2 of 10   accepts 11 -> 1 of 50

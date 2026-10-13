@@ -1,0 +1,10 @@
+# Installed on the compute node by new_launch.sh before running the target
+# script. Skip with `--requirements none` when the container image already
+# provides them (as the apertus15.toml image does).
+google-genai
+inspect-ai>=0.3.246
+scipy
+statsmodels
+scikit-learn
+krippendorff
+# openai>=2.45.0   # was commented out in new_launch.sh; kept off by default

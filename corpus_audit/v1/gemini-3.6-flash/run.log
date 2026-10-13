@@ -1,0 +1,231 @@
+Direct use of automatic function calling (AFC) in Models.generate_content is not recommended. Instead, we recommend to use AFC in Chat.send_message. Similarly, direct use of AFC in Models.generate_content_stream is not recommended. Instead, we recommend to use AFC in Chat.send_message_stream.
+Direct use of automatic function calling (AFC) in Models.generate_content is not recommended. Instead, we recommend to use AFC in Chat.send_message. Similarly, direct use of AFC in Models.generate_content_stream is not recommended. Instead, we recommend to use AFC in Chat.send_message_stream.
+Direct use of automatic function calling (AFC) in Models.generate_content is not recommended. Instead, we recommend to use AFC in Chat.send_message. Similarly, direct use of AFC in Models.generate_content_stream is not recommended. Instead, we recommend to use AFC in Chat.send_message_stream.
+Direct use of automatic function calling (AFC) in Models.generate_content is not recommended. Instead, we recommend to use AFC in Chat.send_message. Similarly, direct use of AFC in Models.generate_content_stream is not recommended. Instead, we recommend to use AFC in Chat.send_message_stream.
+2214 items, 2214 to grade with gemini-3.6-flash
+......................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................
+=== v1/gemini-3.6-flash/judged_audit60_old.jsonl
+
+Synthetic QA  (n=20)
+  Clinical Soundness       +1.00
+  Safety                   +1.35
+  Contextual Fit           +1.35
+  Appropriate Confidence   +1.15
+  Clarity & Completeness   +0.95
+  items with any score <= -1: 9 (45%)
+    Synthetic QA:44643: Question defect: multiple-choice question missing its answer options in the stem. Contextual fit and
+    Synthetic QA:13813: Ambiguous question: multiple-choice stem is missing answer options. Contextual fit penalized. Answer
+    Synthetic QA:66307: Factual error and label mismatch: Serologic testing (ANA/ENA) is recommended for all patients with s
+    Synthetic QA:149135: Ambiguous question: Blood pressure is omitted. Factual/Safety error: Tachycardia and hypoxia do not 
+    Synthetic QA:164543: Dismissing right-heart catheterization (RHC) before intervention in secondary TR is medically flawed
+
+Guidelines QA  (n=20)
+  Clinical Soundness       +1.45
+  Safety                   +1.70
+  Contextual Fit           +1.50
+  Appropriate Confidence   +1.60
+  Clarity & Completeness   +1.50
+  items with any score <= -1: 5 (25%)
+    Guidelines QA:16716: Question defect: missing drug name. The stem asks for a guideline dosing regimen for pediatric sinus
+    Guidelines QA:10380: Ambiguous question: Stem refers to 'the lice shampoo' without specifying which agent (e.g., permethr
+    Guidelines QA:44933: Defect: ambiguous referent ('the suspension' is never specified). Contextual Fit scored -1. Re-evalu
+    Guidelines QA:99754: Factual error and label mismatch: Fluzone 0.5 mL is licensed for 3-year-olds. Unvaccinated children 
+    Guidelines QA:109250: Option C specifies 'exactly three prior therapies', whereas FDA approval requires at least three pri
+
+Synthetic MOOVE  (n=20)
+  Clinical Soundness       +1.20
+  Safety                   +1.35
+  Contextual Fit           +1.25
+  Appropriate Confidence   +1.70
+  Clarity & Completeness   +0.40
+  items with any score <= -1: 12 (60%)
+    Synthetic MOOVE:71: Clarity & Completeness scored -1 due to an abrupt text truncation at the end of the response.
+    Synthetic MOOVE:790: Ambiguous question: a 6-year-old does not have an open fontanelle. Factual errors include incorrect 
+    Synthetic MOOVE:5354: Contextual Fit (-1) and Clarity & Completeness (-2): The response is truncated mid-sentence at the e
+    Synthetic MOOVE:7141: The answer is clinically sound and well-structured, but it is incomplete, cutting off mid-sentence a
+    Synthetic MOOVE:14755: Initiating antifibrotic therapy prior to a confirmed diagnosis or biopsy is medically inappropriate 
+
+gemini-3.6-flash: in=92,119 out=50,005 -> $0.5132 ($0.2566 on batch)
+
+=== v1/gemini-3.6-flash/judged_audit60_v1.jsonl
+
+Synthetic QA  (n=16)
+  Clinical Soundness       +1.38
+  Safety                   +1.56
+  Contextual Fit           +2.00
+  Appropriate Confidence   +1.44
+  Clarity & Completeness   +1.81
+  items with any score <= -1: 3 (19%)
+    Synthetic QA:56202: Serologic testing (ANA, ENA) is required to rule out connective tissue disease before diagnosing IPF
+    Synthetic QA:139503: Dismissing right-heart catheterization prior to tricuspid valve intervention is medically incorrect.
+    Synthetic QA:131814: Multiple cranial neuropathies (CN VII and CN XII) exclude isolated Bell's palsy and necessitate brai
+
+Guidelines QA  (n=19)
+  Clinical Soundness       +1.16
+  Safety                   +1.74
+  Contextual Fit           +1.63
+  Appropriate Confidence   +1.58
+  Clarity & Completeness   +1.42
+  items with any score <= -1: 5 (26%)
+    Guidelines QA:14803: Question defect: the antibiotic is not specified. The answer arbitrarily assumes amoxicillin, invent
+    Guidelines QA:9191: Clinical Soundness scored -1 due to a factual error in the explanation: pyrethrins are approved for 
+    Guidelines QA:57370: Factual error: The answer incorrectly states Niravam is clobazam instead of alprazolam, though the c
+    Guidelines QA:37376: ambiguous_question: Patient weight is missing, which is necessary for weight-based dose calculation.
+    Guidelines QA:97149: Option C specifies 'exactly three' prior therapies, whereas daratumumab monotherapy requires at leas
+
+gemini-3.6-flash: in=43,601 out=25,424 -> $0.2561 ($0.1280 on batch)
+
+=== v1/gemini-3.6-flash/judged_800_old.jsonl
+
+Curated QA  (n=200)
+  Clinical Soundness       +1.76
+  Safety                   +1.90
+  Contextual Fit           +1.90
+  Appropriate Confidence   +1.85
+  Clarity & Completeness   +1.66
+  items with any score <= -1: 19 (10%)
+    Curated QA:35631: Label mismatch and factual error: Leptospirosis-associated acute kidney injury uniquely presents wit
+    Curated QA:109554: Label mismatch/factual error: Activation of Factor X (option C) is considered the rate-limiting step
+    Curated QA:110950: Incorrect answer choice. The renal angle is anatomically defined as the angle between the lower bord
+    Curated QA:124457: The explanation explicitly notes that 'there is no Batin mutation described', which makes option D f
+    Curated QA:132792: Clinical Soundness is -1 because Brucellosis also typically presents with leukopenia or a normal WBC
+
+Synthetic QA  (n=200)
+  Clinical Soundness       +1.36
+  Safety                   +1.67
+  Contextual Fit           +1.50
+  Appropriate Confidence   +1.51
+  Clarity & Completeness   +1.30
+  items with any score <= -1: 63 (32%)
+    Synthetic QA:3075: Clinical Soundness is -1 because the explanation incorrectly describes metoprolol and esmolol as non
+    Synthetic QA:4216: Factual error and safety issue: The explanation incorrectly states IV diltiazem is used "especially 
+    Synthetic QA:10671: IPF requires excluding secondary causes; a shipyard welder suggests asbestos exposure (asbestosis). 
+    Synthetic QA:12631: Ambiguous question: options are missing from the stem. Factual error: beta-blockers like metoprolol 
+    Synthetic QA:6398: Label mismatch and factual error: Macrolides like azithromycin characteristically cause reversible, 
+
+Guidelines QA  (n=200)
+  Clinical Soundness       +1.47
+  Safety                   +1.65
+  Contextual Fit           +1.67
+  Appropriate Confidence   +1.56
+  Clarity & Completeness   +1.60
+  items with any score <= -1: 32 (16%)
+    Guidelines QA:13291: Ambiguous question: refers to an unspecified 'guideline' and 'website'. Without context, the item is
+    Guidelines QA:10868: ambiguous_question: 'ALYFTREK' is a non-existent medication, making the clinical scenario unanswerab
+    Guidelines QA:14775: Question defect: missing referent ('the cream' is not identified in the stem). The answer assumes th
+    Guidelines QA:13729: Severe stress protein requirements are typically 1.5–2.0 g/kg/day (~0.24–0.32 g N/kg/day). Setting t
+    Guidelines QA:25600: ambiguous_question: The question stem and options consist entirely of placeholder ellipses, renderin
+
+Synthetic MOOVE  (n=200)
+  Clinical Soundness       +1.16
+  Safety                   +1.41
+  Contextual Fit           +1.41
+  Appropriate Confidence   +1.62
+  Clarity & Completeness   +0.27
+  items with any score <= -1: 111 (56%)
+    Synthetic MOOVE:420: Step 9 erroneously suggests considering an intra-aortic balloon pump (IABP). IABP is strictly contra
+    Synthetic MOOVE:880: The response is incomplete; it cuts off abruptly at the end of section 3 and completely fails to ans
+    Synthetic MOOVE:1053: Clarity & Completeness (-1): The answer is truncated mid-sentence at the end of section B ('Add a th
+    Synthetic MOOVE:1099: The response is truncated mid-table and entirely fails to address the second part of the question re
+    Synthetic MOOVE:1417: Erroneously labels Stanford Type B as 'proximal' (Type A is proximal; Type B is distal). Recommendin
+
+gemini-3.6-flash: in=1,118,259 out=593,641 -> $6.1297 ($3.0648 on batch)
+
+=== v1/gemini-3.6-flash/judged_800_v1.jsonl
+
+Curated QA  (n=169)
+  Clinical Soundness       +1.77
+  Safety                   +1.96
+  Contextual Fit           +2.00
+  Appropriate Confidence   +1.94
+  Clarity & Completeness   +1.90
+  items with any score <= -1: 12 (7%)
+    Curated QA:40908: Factual error and hallucinated rationale: Tobey-Ayer test measures CSF pressure rise during lumbar p
+    Curated QA:47287: The correct answer (C) is selected, but the explanation contains a factual error claiming alpha-thal
+    Curated QA:78338: Factual error in reasoning for option A: Section 16 of the Factories Act explicitly mandates 500 cub
+    Curated QA:98603: Option C is correct. However, the explanation incorrectly claims Option B is false, creating an inte
+    Curated QA:104705: Clinical Soundness scored -1 due to a factual error: SCFE characteristically causes coxa vara, not c
+
+Synthetic QA  (n=168)
+  Clinical Soundness       +1.71
+  Safety                   +1.87
+  Contextual Fit           +1.92
+  Appropriate Confidence   +1.86
+  Clarity & Completeness   +1.90
+  items with any score <= -1: 15 (9%)
+    Synthetic QA:5443: Clinical Soundness -1: Option C explanation incorrectly states ototoxicity is not a recognized adver
+    Synthetic QA:11559: Chest X-ray (A) is the mandatory initial diagnostic test for suspected PE in pregnancy to rule out o
+    Synthetic QA:20830: Aminoglycoside (gentamicin) ototoxicity is classically irreversible due to hair cell loss. Macrolide
+    Synthetic QA:35849: The answer contains factual errors and hallucinated rationale, incorrectly claiming ACE inhibitors p
+    Synthetic QA:59173: Label mismatch and factual error: Sine-wave pattern typically occurs at serum potassium levels >8.0 
+
+Guidelines QA  (n=182)
+  Clinical Soundness       +1.38
+  Safety                   +1.63
+  Contextual Fit           +1.78
+  Appropriate Confidence   +1.67
+  Clarity & Completeness   +1.64
+  items with any score <= -1: 32 (18%)
+    Guidelines QA:610: Falsely states Dalvance is diluted in 0.9% sodium chloride, which causes precipitation (requires D5W
+    Guidelines QA:11788: ambiguous_question: 'the guideline' is an unspecified referent. The question lacks necessary clinica
+    Guidelines QA:9618: ALYFTREK is not a real medication. Inventing a fictional drug and hallucinating specific missed-dose
+    Guidelines QA:13103: Defect: unspecified referent ('the cream' is not identified). Contextual Fit (-2) and Appropriate Co
+    Guidelines QA:18104: Factual errors and hallucinated rationale: 'Synthroid T3/T4' does not exist, and Armour Thyroid is s
+
+gemini-3.6-flash: in=657,926 out=329,651 -> $3.4593 ($1.7296 on batch)
+
+=== v1/gemini-3.6-flash/judged_sample800_v1.jsonl
+
+Curated QA  (n=200)
+  Clinical Soundness       +1.78
+  Safety                   +1.93
+  Contextual Fit           +1.87
+  Appropriate Confidence   +1.86
+  Clarity & Completeness   +1.84
+  items with any score <= -1: 15 (8%)
+    Curated QA:7129: Ambiguous question: missing image referenced in the stem ("A radiograph of the patient's hand is giv
+    Curated QA:14985:  selects B based on the obsolete 1994 AECC definition instead of C (PaO2/FiO2 <300 mmHg), which is t
+    Curated QA:16937: ambiguous_question: Stem asks about color blindness given a father with Vitamin D-resistant rickets.
+    Curated QA:18509: Factual error and hallucinated rationale: Anti-LKM-3 antibodies target UDP-glucuronosyltransferase (
+    Curated QA:27077: Clinical Soundness scored -1 due to a factual error: hypertensive disorders of pregnancy (including 
+
+Synthetic QA  (n=200)
+  Clinical Soundness       +1.60
+  Safety                   +1.79
+  Contextual Fit           +1.90
+  Appropriate Confidence   +1.75
+  Clarity & Completeness   +1.84
+  items with any score <= -1: 24 (12%)
+    Synthetic QA:16134: Stage 2 HTN (≥140/90 mmHg) requires combination therapy with 2 agents per guidelines. Thiazides, ACE
+    Synthetic QA:25707: Label mismatch: The correct answer is C (Asbestosis). IPF requires excluding known occupational expo
+    Synthetic QA:26307: ambiguous_question: Inpatient vs outpatient setting is unspecified. IDSA/ATS guidelines (2019, not 2
+    Synthetic QA:32883: ambiguous_question: Essential clinical data (time of onset, current INR, and CTA demonstrating large
+    Synthetic QA:33620: Levofloxacin and moxifloxacin are clinically equivalent respiratory fluoroquinolones in CAP guidelin
+
+Guidelines QA  (n=200)
+  Clinical Soundness       +1.45
+  Safety                   +1.73
+  Contextual Fit           +1.74
+  Appropriate Confidence   +1.65
+  Clarity & Completeness   +1.69
+  items with any score <= -1: 35 (18%)
+    Guidelines QA:1836: Trabectedin is not recommended (FDA) or contraindicated (EMA) in severe renal impairment (<30 mL/min
+    Guidelines QA:5434: Factual error: current guidelines recommend single-dose amoxicillin (2 g) 30-60 minutes prior, not p
+    Guidelines QA:8660: The answer misidentifies FOLOTYN as pralsetinib and incorrectly refers to it as an oral targeted age
+    Guidelines QA:8834: Unspecified referent: 'the lozenge' is not identified in the question. Contextual Fit, Appropriate C
+    Guidelines QA:9161: Option A explanation contains factual errors regarding patch surface area (140 cm², not 30 cm²). Opt
+
+Synthetic MOOVE  (n=200)
+  Clinical Soundness       +1.14
+  Safety                   +1.36
+  Contextual Fit           +1.95
+  Appropriate Confidence   +1.64
+  Clarity & Completeness   +1.76
+  items with any score <= -1: 48 (24%)
+    Synthetic MOOVE:607: Clinical Soundness (-1): Chest tube sizing for a 3-year-old is grossly oversized (28–32 Fr vs approp
+    Synthetic MOOVE:666: Falsely endorses hallucinated 'Coca-Cola test' as pathognomonic. Recommends MET (tamsulosin) for a r
+    Synthetic MOOVE:986: Safety (-1) and Clinical Soundness (-1): Initiating positive-pressure ventilation (RSI) prior to dec
+    Synthetic MOOVE:1661: Omits mandatory 36-hour washout period when switching ACE inhibitor to ARNI (angioedema risk). Recom
+    Synthetic MOOVE:2461: Pericardiocentesis is generally contraindicated in acute type A aortic dissection with tamponade bec
+
+gemini-3.6-flash: in=1,407,633 out=580,183 -> $6.4628 ($3.2314 on batch)

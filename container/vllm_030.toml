@@ -1,0 +1,18 @@
+# Upstream vLLM v0.30.0 (vllm/vllm-openai:v0.30.0-aarch64), imported with enroot
+# on 2026-09-23 for judges newer than inference_4's vLLM 0.20.1: Muse-Glimmer
+# needs vLLM >= 0.28. Single-node use only (no NCCL network hooks).
+# pandas and python-dotenv, which auto_moove needs, come from PYTHONPATH.
+image = "${SCRATCH}/containers/vllm_v0.30.0.sqsh"
+mounts = ["${SCRATCH}", "${HOME}"]   # the file systems the job reads and writes; adjust to your cluster
+entrypoint = false
+writable = false
+workdir = "${HOME}/meditronFO"   # the path of this folder
+
+[env]
+# the image has python3 only; new_launch.sh runs "python"
+PATH = "${SCRATCH}/containers/vllm_v0.30.0_bin:/usr/local/cuda/bin:/usr/local/nvidia/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+PYTHONPATH = "${SCRATCH}/containers/vllm_v0.30.0_extra"
+XDG_CACHE_HOME = "${SCRATCH}/.cache"
+TRITON_CACHE_DIR = "${SCRATCH}/.cache/triton"
+HF_HOME = "${SCRATCH}/hf"
+CUDA_CACHE_DISABLE = "1"
