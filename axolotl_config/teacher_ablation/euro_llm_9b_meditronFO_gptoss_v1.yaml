@@ -1,0 +1,108 @@
+wandb_name: euro_llm_9b_meditronFO_gptoss_v1
+output_dir: $SCRATCH/meditronfo/models/euro_llm_9b_meditronFO_gptoss_v1
+dataset_prepared_path: $SCRATCH/meditronfo/prepared/euro_llm_9b_meditronFO_gptoss_v1
+
+base_model: utter-project/EuroLLM-9B-Instruct
+
+plugins:
+  - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+
+load_in_8bit: false
+load_in_4bit: false
+
+datasets:
+  - path: $PROJECT_ROOT/data/corpora/meditronfo_gptoss_v1/curated_qa.jsonl
+    ds_type: json
+    type: chat_template
+    field_messages: conversations
+    message_property_mappings:
+      role: from
+      content: value
+    roles:
+      system: [system]
+      user: [user, human]
+      assistant: [assistant, gpt]
+
+  - path: $PROJECT_ROOT/data/corpora/meditronfo_gptoss_v1/synthetic_qa.jsonl
+    ds_type: json
+    type: chat_template
+    field_messages: conversations
+    message_property_mappings:
+      role: from
+      content: value
+    roles:
+      system: [system]
+      user: [user, human]
+      assistant: [assistant, gpt]
+
+  - path: $PROJECT_ROOT/data/corpora/meditronfo_gptoss_v1/guidelines_qa.jsonl
+    ds_type: json
+    type: chat_template
+    field_messages: conversations
+    message_property_mappings:
+      role: from
+      content: value
+    roles:
+      system: [system]
+      user: [user, human]
+      assistant: [assistant, gpt]
+
+  - path: $PROJECT_ROOT/data/corpora/meditronfo_gptoss_v1/synthetic_moove.jsonl
+    ds_type: json
+    type: chat_template
+    field_messages: conversations
+    message_property_mappings:
+      role: from
+      content: value
+    roles:
+      system: [system]
+      user: [user, human]
+      assistant: [assistant, gpt]
+
+      
+val_set_size: 0.0
+
+sequence_len: 8192
+sample_packing: true
+
+gradient_accumulation_steps: 8
+micro_batch_size: 2
+num_epochs: 1
+optimizer: adamw_torch_fused
+lr_scheduler: cosine
+learning_rate: 1e-5
+max_grad_norm: 1.0
+weight_decay: 0.01
+
+bf16: true
+tf32: false
+
+logging_steps: 1
+flash_attention: true
+
+warmup_ratio: 0.1
+evals_per_epoch: 0
+save_steps: 25
+save_total_limit: 1
+auto_resume_from_checkpoints: true
+
+wandb_project: $WANDB_PROJECT
+wandb_entity: $WANDB_ENTITY
+
+fsdp_version: 2
+fsdp_config:
+  offload_params: false
+  cpu_ram_efficient_loading: true
+  auto_wrap_policy: TRANSFORMER_BASED_WRAP
+  transformer_layer_cls_to_wrap: LlamaDecoderLayer
+  state_dict_type: SHARDED_STATE_DICT
+  reshard_after_forward: true
+  activation_checkpointing: true
+
+seed: 42
+data_seed: 42
+
+special_tokens:
+  eos_token: "<|im_end|>"
+
+chat_template: chatml

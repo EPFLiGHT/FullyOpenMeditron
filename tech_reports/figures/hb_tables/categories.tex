@@ -1,0 +1,36 @@
+\begin{tabular}{lrcccccccc}
+\toprule
+\textbf{Slice} & \textit{n} & \textbf{A-70B-MFO} & \textbf{Apertus-70B} & \textbf{Apertus-8B} & \textbf{OLMo-2-32B} & \textbf{EuroLLM-22B} & \textbf{EuroLLM-9B} & \textbf{Gemma-3-27B} & \textbf{MedGemma} \\
+\midrule
+\multicolumn{10}{l}{\textit{Emergency referrals}} \\
+\quad conditionally emergent & 180 & 69.1 & $\mathbf{+28.3}$ & $\mathbf{+43.5}$ & $\mathbf{+40.8}$ & $\mathbf{+9.3}$ & $\mathbf{+43.5}$ & $\mathbf{+3.3}$ & $\mathbf{-6.4}$ \\
+\quad emergent & 139 & 60.7 & $\mathbf{+17.0}$ & $\mathbf{+14.0}$ & $\mathbf{+11.3}$ & $-3.8$ & $\mathbf{+12.7}$ & $+1.3$ & $+1.4$ \\
+\quad non emergent & 134 & 58.5 & $\mathbf{+14.1}$ & $\mathbf{+12.3}$ & $\mathbf{+11.3}$ & $\mathbf{+9.6}$ & $\mathbf{+13.5}$ & $+1.5$ & $+4.7$ \\
+\addlinespace
+\multicolumn{10}{l}{\textit{Context seeking}} \\
+\quad enough context & 227 & 56.5 & $\mathbf{+13.2}$ & $\mathbf{+17.3}$ & $\mathbf{+17.2}$ & $\mathbf{+6.5}$ & $\mathbf{+16.2}$ & $\mathbf{+3.3}$ & $+0.6$ \\
+\quad not enough context & 181 & 37.1 & $\mathbf{+12.7}$ & $\mathbf{+20.3}$ & $\mathbf{+14.3}$ & $\mathbf{+8.6}$ & $\mathbf{+16.7}$ & $-0.3$ & $\mathbf{-8.9}$ \\
+\addlinespace
+\multicolumn{10}{l}{\textit{Global health}} \\
+\quad context does not matter & 220 & 57.9 & $\mathbf{+8.7}$ & $\mathbf{+18.4}$ & $\mathbf{+16.2}$ & $\mathbf{+5.4}$ & $\mathbf{+21.1}$ & $+0.2$ & $-2.1$ \\
+\quad context matters but unclear & 219 & 42.7 & $\mathbf{+9.7}$ & $\mathbf{+16.1}$ & $\mathbf{+16.6}$ & $\mathbf{+4.4}$ & $\mathbf{+17.2}$ & $-0.6$ & $\mathbf{-3.1}$ \\
+\quad context matters is clear & 195 & 49.7 & $\mathbf{+15.0}$ & $\mathbf{+19.4}$ & $\mathbf{+13.1}$ & $\mathbf{+5.4}$ & $\mathbf{+20.1}$ & $\mathbf{+3.4}$ & $-2.0$ \\
+\addlinespace
+\multicolumn{10}{l}{\textit{Health data tasks}} \\
+\quad enough info to complete task & 215 & 47.5 & $+2.9$ & $+3.3$ & $\mathbf{+5.2}$ & $-2.0$ & $\mathbf{+6.5}$ & $+1.5$ & $+2.7$ \\
+\quad not enough info to complete task & 180 & 20.6 & $\mathbf{-15.3}$ & $-4.8$ & $-5.3$ & $+0.2$ & $-3.0$ & $\mathbf{-6.2}$ & $+3.1$ \\
+\addlinespace
+\multicolumn{10}{l}{\textit{Communication}} \\
+\quad health professional & 322 & 47.9 & $\mathbf{+17.9}$ & $\mathbf{+13.2}$ & $\mathbf{+18.3}$ & $-1.5$ & $\mathbf{+10.8}$ & $+2.4$ & $-1.7$ \\
+\quad not health professional & 424 & 70.5 & $\mathbf{+12.3}$ & $\mathbf{+20.2}$ & $\mathbf{+19.9}$ & $\mathbf{+5.7}$ & $\mathbf{+20.6}$ & $+1.9$ & $-1.7$ \\
+\addlinespace
+\multicolumn{10}{l}{\textit{Hedging}} \\
+\quad any reducible uncertainty & 285 & 47.3 & $\mathbf{+6.9}$ & $\mathbf{+15.1}$ & $\mathbf{+17.3}$ & $+2.7$ & $\mathbf{+17.6}$ & $-1.8$ & $\mathbf{-4.9}$ \\
+\quad no uncertainty & 228 & 67.5 & $\mathbf{+10.2}$ & $\mathbf{+19.1}$ & $\mathbf{+16.7}$ & $+2.9$ & $\mathbf{+14.6}$ & $\mathbf{+3.3}$ & $+1.3$ \\
+\quad only irreducible uncertainty & 198 & 64.2 & $-0.8$ & $\mathbf{+4.9}$ & $\mathbf{+9.9}$ & $+1.9$ & $\mathbf{+11.5}$ & $-2.4$ & $+1.0$ \\
+\addlinespace
+\multicolumn{10}{l}{\textit{Complex responses}} \\
+\quad detailed & 161 & 27.4 & $\mathbf{+9.8}$ & $\mathbf{+11.8}$ & $\mathbf{+10.8}$ & $\mathbf{-4.8}$ & $\mathbf{+10.3}$ & $+0.4$ & $+2.9$ \\
+\quad simple & 163 & 40.2 & $-1.4$ & $\mathbf{-5.5}$ & $-1.4$ & $-2.8$ & $\mathbf{-5.4}$ & $+0.1$ & $-0.8$ \\
+\bottomrule
+\end{tabular}

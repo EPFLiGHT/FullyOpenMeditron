@@ -8,29 +8,61 @@
 #SBATCH --cpus-per-task 256
 #SBATCH --partition=normal
 #SBATCH --time=1:59:59
-#SBATCH --environment ../.edf/inference_3.toml
-#SBATCH -A a127
+#SBATCH --environment container/inference_3.toml
 
 SCRIPT_DIR="${SLURM_SUBMIT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 source "$SCRIPT_DIR/scripts/slack_helpers.sh"
 
+# ---------------------------------------------------------------------------
+# Shared argument parsing. Runs in BOTH phases: the script re-submits itself
+# via sbatch, so the worker re-parses the same flags. Adding an option is one
+# case arm here -- it used to mean forking the whole file, which is how
+# meditron_eval_gemma.sh and meditron_eval_no_cot.sh came to exist.
+#
+#   --tasks NAME           lm_eval task suite            (default: medbench)
+#   --chat-template NAME   pass to --apply_chat_template (default:
+#                          tokenizer_default; "none" omits the flag, which is
+#                          what meditron_eval_gemma.sh used to do)
+#   --run-name NAME        job/output tag
+#   --env FILE             container EDF override
+#   --time HH:MM:SS        walltime override
+#   --account NAME         slurm account override
+#   --debug                --limit 100
+#   --model_parallelism    single-process, parallelize=True
+#
+# Folded-in variants:
+#   gemma  : --chat-template none
+#   no_cot : --tasks medbench_no_cot
+# ---------------------------------------------------------------------------
+TASKS="medbench"
+CHAT_TEMPLATE="tokenizer_default"
+RUN_NAME=""
+MODEL_PATH=""
+DEBUG_FLAG=0
+MODEL_PARALLELISM=0
+EDF=""
+WALLTIME=""
+ACCOUNT=""
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --tasks)              TASKS="$2"; shift 2 ;;
+        --chat-template)      CHAT_TEMPLATE="$2"; shift 2 ;;
+        --run-name)           RUN_NAME="$2"; shift 2 ;;
+        --env)                EDF="$2"; shift 2 ;;
+        --time)               WALLTIME="$2"; shift 2 ;;
+        --account)            ACCOUNT="$2"; shift 2 ;;
+        --debug)              DEBUG_FLAG=1; shift ;;
+        --model_parallelism)  MODEL_PARALLELISM=1; shift ;;
+        -*)                   echo "Unknown flag: $1"; exit 1 ;;
+        *)                    [ -z "$MODEL_PATH" ] && MODEL_PATH="$1"; shift ;;
+    esac
+done
+
 # PHASE 1: SUBMISSION LOGIC /LOGIN NODE
 
 if [ -z "$SLURM_JOB_ID" ]; then
-    RUN_NAME="meditron-eval-vllm"
-    MODEL_PATH="$1"
-    DEBUG_FLAG=0
-    MODEL_PARALLELISM=0
-    if [ "${2:-}" = "--debug" ]; then
-        DEBUG_FLAG=1
-    elif [ "${2:-}" = "--model_parallelism" ]; then
-        MODEL_PARALLELISM=1
-    fi
-    if [ "${3:-}" = "--debug" ]; then
-        DEBUG_FLAG=1
-    elif [ "${3:-}" = "--model_parallelism" ]; then
-        MODEL_PARALLELISM=1
-    fi
+    [ -z "$RUN_NAME" ] && RUN_NAME="meditron-eval-vllm"
     SCRIPT_PATH="$0"
 
     # Load env (PROJECT_ROOT, USER_STORAGE, etc.)
@@ -52,14 +84,23 @@ if [ -z "$SLURM_JOB_ID" ]; then
         exit 1
     fi
 
-    SBATCH_ARGS=("$RUN_NAME" "$MODEL_PATH")
+    SBATCH_OPTS=(-J "$RUN_NAME")
+    [ -n "$EDF" ]      && SBATCH_OPTS+=(--environment="$EDF")
+    [ -n "$WALLTIME" ] && SBATCH_OPTS+=(--time="$WALLTIME")
+    [ -n "$ACCOUNT" ]  && SBATCH_OPTS+=(--account="$ACCOUNT")
+    # Optional reservation (scripts/reservation.sh), only if it exists now.
+    source "$SCRIPT_DIR/scripts/reservation.sh"
+    RES_OPT="$(reservation_opts "${ACCOUNT:-}" normal)"
+    [ -n "$RES_OPT" ] && SBATCH_OPTS+=("$RES_OPT") && echo "🎫 $RES_OPT"
+
+    SBATCH_ARGS=("$MODEL_PATH" --run-name "$RUN_NAME" --tasks "$TASKS" --chat-template "$CHAT_TEMPLATE")
     if [ "$DEBUG_FLAG" -eq 1 ]; then
         SBATCH_ARGS+=("--debug")
     fi
     if [ "$MODEL_PARALLELISM" -eq 1 ]; then
         SBATCH_ARGS+=("--model_parallelism")
     fi
-    SUBMISSION_OUTPUT=$(sbatch -J "$RUN_NAME" "$SCRIPT_PATH" "${SBATCH_ARGS[@]}")
+    SUBMISSION_OUTPUT=$(sbatch "${SBATCH_OPTS[@]}" "$SCRIPT_PATH" "${SBATCH_ARGS[@]}")
     JOB_ID=$(echo "$SUBMISSION_OUTPUT" | awk '{print $4}')
 
     echo "🚀 Submitted Job: $JOB_ID"
@@ -91,26 +132,9 @@ fi
 
 # PHASE 2: WORKER LOGIC / COMPUTE NODE
 
-RUN_NAME="$1"
-MODEL_PATH="$2"
-DEBUG_FLAG=0
-MODEL_PARALLELISM=0
-if [ "$MODEL_PATH" = "--debug" ]; then
-    DEBUG_FLAG=1
-    MODEL_PATH=""
-elif [ "$MODEL_PATH" = "--model_parallelism" ]; then
-    MODEL_PARALLELISM=1
-    MODEL_PATH=""
-elif [ "${3:-}" = "--debug" ]; then
-    DEBUG_FLAG=1
-elif [ "${3:-}" = "--model_parallelism" ]; then
-    MODEL_PARALLELISM=1
-fi
-
-# Back-compat: allow a single positional arg to mean MODEL_PATH.
-if [ -z "$MODEL_PATH" ] && [ -n "$RUN_NAME" ]; then
-    MODEL_PATH="$RUN_NAME"
-    RUN_NAME=""
+# Arguments were parsed at the top of the file, in both phases.
+if [ -z "$RUN_NAME" ]; then
+    RUN_NAME="eval-gen"
 fi
 
 if [ -z "$RUN_NAME" ]; then
@@ -137,6 +161,7 @@ if [ -d "$MODEL_PATH" ]; then
     if ! compgen -G "$MODEL_PATH/model-*.safetensors" > /dev/null \
        && [ ! -f "$MODEL_PATH/model.safetensors" ] \
        && [ ! -f "$MODEL_PATH/pytorch_model.bin" ] \
+       && ! compgen -G "$MODEL_PATH/pytorch_model-*.bin" > /dev/null \
        && ! compgen -G "$MODEL_PATH/checkpoint-*/model-*.safetensors" > /dev/null \
        && ! compgen -G "$MODEL_PATH/checkpoint-*/pytorch_model*.bin" > /dev/null; then
         echo "MODEL_PATH has no model weights yet: $MODEL_PATH"
@@ -178,12 +203,18 @@ trap 'FAILED_CMD=$BASH_COMMAND' ERR
 trap 'rc=$?; slack_notify "$rc" "eval"; exit "$rc"' EXIT
 set -eo pipefail
 
-cd "$PROJECT_ROOT/../lm-evaluation-harness"
+# The harness fork is a git submodule of this repo.
+HARNESS_DIR="$PROJECT_ROOT/lm-evaluation-harness"
+if [ ! -f "$HARNESS_DIR/pyproject.toml" ]; then
+    echo "lm-evaluation-harness submodule is empty; run: git submodule update --init"
+    exit 1
+fi
+cd "$HARNESS_DIR"
 pip install -e .[ifeval]
 #pip install --upgrade transformers
 #pip install --upgrade --no-deps "datasets>=2.19.0,<3.0.0"
 
-cd "$PROJECT_ROOT/../lm-evaluation-harness/lm_eval/tasks"
+cd "$HARNESS_DIR/lm_eval/tasks"
 
 export WORLD_SIZE=$SLURM_NNODES
 export MASTER_ADDR=$(hostname)
@@ -197,7 +228,9 @@ unset TRANSFORMERS_CACHE
 # Required on some clusters/PyTorch builds: avoid CUDA init in forked subprocesses.
 export VLLM_WORKER_MULTIPROC_METHOD="${VLLM_WORKER_MULTIPROC_METHOD:-spawn}"
 
-export LM_EVAL_INCLUDE_PATH="/users/$USER/lm-evaluation-harness/lm_eval/tasks"
+# lm-eval always loads its own tasks (the fork's medbench among them); this
+# adds the repo's, e.g. oe_mcq from oe_bench/lm_eval_tasks.
+export LM_EVAL_INCLUDE_PATH="${LM_EVAL_INCLUDE_PATH:-$PROJECT_ROOT/oe_bench/lm_eval_tasks}"
 
 echo "WORLD_SIZE=$WORLD_SIZE"
 echo "MASTER_ADDR=$MASTER_ADDR"
@@ -236,10 +269,15 @@ MODEL_ARGS="pretrained=$MODEL_PATH,dtype=bfloat16,trust_remote_code=True,tensor_
 
 unset SSL_CERT_FILE
 
+CHAT_TEMPLATE_ARGS=()
+if [ "$CHAT_TEMPLATE" != "none" ]; then
+    CHAT_TEMPLATE_ARGS=(--apply_chat_template "$CHAT_TEMPLATE")
+fi
+
 python3 -m lm_eval \
   --model vllm \
   --model_args "$MODEL_ARGS" \
-  --tasks medbench \
+  --tasks "$TASKS" \
   --batch_size auto \
   --verbosity "DEBUG" \
   --log_samples \
@@ -248,7 +286,7 @@ python3 -m lm_eval \
   --gen_kwargs temperature=0.0 \
   --seed 42 \
   "${LIMIT_ARGS[@]}" \
-  --apply_chat_template tokenizer_default 
+  "${CHAT_TEMPLATE_ARGS[@]}"
   
 echo "END TIME: $(date)"
 

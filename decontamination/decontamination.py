@@ -348,7 +348,10 @@ def main(args):
         # Extract text based on the provided format flag
         text = ""
         if args.train_format == "sharegpt":
-            text = next((msg["value"] for msg in example.get("conversations", []) if msg.get("from") == "human"), "")
+            # First user turn. Our corpora use both "human" and "user" for it: reading
+            # only "human" left 95% of CuratedQA with an empty, never-checked prompt.
+            text = next((msg["value"] for msg in example.get("conversations", [])
+                         if msg.get("from") in ("human", "user")), "")
         elif args.train_format == "flat":
             text = example.get(args.train_prompt_key, "")
         else: # Default swiss-ai format
