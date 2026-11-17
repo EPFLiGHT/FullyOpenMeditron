@@ -6,7 +6,7 @@ the training corpus, the training configs, the evaluations, and the scripts that
 outputs of every reported run into the paper's figures and tables, together with those scripts' outputs
 (every number in the paper can be checked against them).
 
-Project page: [meditron.light-laboratory.org/meditronfo](https://meditron.light-laboratory.org/meditronfo/) (the models, the results, and a chat with Apertus-70B-MeditronFO).
+Project page: [meditron.light-laboratory.org/meditronfo](https://meditron.light-laboratory.org/meditronfo/) (the models, the results and the paper). Chat with Apertus-70B-MeditronFO: [meditron.light-laboratory.org/#chat](https://meditron.light-laboratory.org/#chat).
 
 The training corpus is on Hugging Face as
 [`EPFLiGHT/fully-open-meditron`](https://huggingface.co/datasets/EPFLiGHT/fully-open-meditron), and the model
