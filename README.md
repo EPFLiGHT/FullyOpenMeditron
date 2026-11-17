@@ -6,6 +6,8 @@ the training corpus, the training configs, the evaluations, and the scripts that
 outputs of every reported run into the paper's figures and tables, together with those scripts' outputs
 (every number in the paper can be checked against them).
 
+Project page: [meditron.light-laboratory.org/meditronfo](https://meditron.light-laboratory.org/meditronfo/) (the models, the results, and a chat with Apertus-70B-MeditronFO).
+
 The training corpus is on Hugging Face as
 [`EPFLiGHT/fully-open-meditron`](https://huggingface.co/datasets/EPFLiGHT/fully-open-meditron), and the model
 weights are in the [MeditronFO collection](https://huggingface.co/collections/EPFLiGHT/meditronfo). The
